@@ -1,0 +1,25 @@
+/* 全局样式表 */
+html,
+body,
+#app {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.el-calendar {
+    user-select: none;
+    border-radius: 1rem !important;
+    height: 100% !important;
+}
+
+.el-empty {
+    padding:0 !important;
+}
+
+.gray-title {
+    font-size: 2.2rem;
+    color: gray;
+    letter-spacing: 1rem;
+    text-shadow: 5px 5px 5px gray;
+  }
