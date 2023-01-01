@@ -6,8 +6,8 @@
         <div class="form">
           <span>图书管理系统</span>
           <el-form @submit.prevent='' ref='loginForRef' :model="loginData" :rules="loginFormRules" label-width>
-            <el-form-item prop="id">
-              <el-input @keydown.enter.native="login" placeholder="用户ID" v-model.trim="loginData.id"
+            <el-form-item prop="mail_num">
+              <el-input @keydown.enter.native="login" placeholder="邮箱地址" v-model.trim="loginData.mail_num"
                 prefix-icon="el-icon-user-solid">
               </el-input>
             </el-form-item>
@@ -46,7 +46,7 @@
           </el-input>
         </el-form-item>
         <el-form-item prop="vali">
-          <el-input :disabled="!isGetValidate" placeholder="" v-model.trim="registerData.vali"
+          <el-input :disabled="!isGetValidate" placeholder="请先获取验证码（ 注意大小写 ）" v-model.trim="registerData.vali"
             prefix-icon="el-icon-s-promotion">
           </el-input>
         </el-form-item>
@@ -57,7 +57,6 @@
           <el-button :disabled="!registerData.vali" v-if="isGetValidate&&registerData.mail_num" :round="false"
             :circle="false" type="primary" size="medium" @click="register" style="float:right">
             确认注册 <i class="el-icon-key el-icon--right"></i></el-button>
-            <el-button type="primary" plain @click="">注册</el-button>
         </el-form-item>
         <el-link class="link" style="" target="_blank" @click="switchStatus">已有账户？ 点击登录</el-link>
       </el-form>
@@ -78,7 +77,7 @@
       return {
         // 登录表单的数据绑定对象
         loginData: {
-          id: '',
+          mail_num: '',
           password: ''
         },
         // 注册表单验证对象
@@ -102,11 +101,11 @@
               message: '请输入邮箱地址',
               trigger: 'blur'
             },
-            {
-              min: 8,
-              message: '邮箱地址长度不合法',
-              trigger: 'blur'
-            }
+            // {
+            //   min: 8,
+            //   message: '邮箱地址长度不合法',
+            //   trigger: 'blur'
+            // }
           ],
           password: [{
               required: true,
@@ -191,33 +190,30 @@
       // 用户登录
       login() {
         let submit = {
-          "user": {
-            "mail_num": this.loginData.id,
-            "password": this.loginData.password
-          }
+            "userId": this.loginData.mail_num,
+            "password": this.loginData.password          
         }
         this.$refs.loginForRef.validate(async valid => {
           if (!valid) return
-          await this.$http.post(this.baseUrl+'/userlogin', submit).then(res => {
-            window.localStorage.setItem('token', submit.user.password)
-            window.localStorage.setItem('id', submit.user.id)
-            window.localStorage.setItem('name', res.data.name)
-            //window.localStorage.setItem('usertype', res.data.result)
+          await this.$http.post('http://49.235.152.25:8848/login', submit).then(res => {
+            window.localStorage.setItem('token', submit.password)
+            // window.localStorage.setItem('id', res.data.id)
+            // window.localStorage.setItem('name', res.data.name)
             this.saveInfo()
             this.$message.success({
-              message: '登录成功',
-              duration: 1000
+              message: res.data,
+              duration: 5000
             })
-            // if (res.data.result == 0) // 普通用户
-            //   this.$router.push('/userNavigate')
-            // else if (res.data.result == 1) // Admin
-            //   this.$router.push('/adminNavigate')
-            // else
+            if (res.data.result == 'user') // 普通用户
+              this.$router.push('/userNavigate')
+            else if (res.data.result == 'admin') // Admin
+              this.$router.push('/adminNavigate')
+            else
               this.$router.push('/userNavigate')
           }).catch(err => {
             if (err) {
               this.$message.error({
-                message: '登录失败',
+                message: '登录失败'+submit,
                 duration: 1500
               })
             }
@@ -254,7 +250,7 @@
               message: '注册成功',
               duration: 2000
             })
-            this.$router.push('/home') // userNavigate
+            this.$router.push('/home')
           }).catch((err, a) => {
             if (err) {
               this.$message.error({

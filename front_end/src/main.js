@@ -30,7 +30,7 @@ Vue.config.productionTip = false
 axios.interceptors.request.use(config=>{
   if (config.url ===Vue.baseUrl+'/userlogin')
   return config
-  config.headers.authorization = 'Bearer ' + window.localStorage.getItem('token')
+  //config.headers.authorization = 'Bearer ' + window.localStorage.getItem('token')
   return config
 })
 

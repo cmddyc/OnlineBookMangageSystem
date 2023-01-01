@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div style="text-align:center;user-select:none;"><span class="gray-title">反馈管理</span></div>
+    <div style="text-align:center;user-select:none;"><span class="mytitle">反馈管理</span></div>
     <!-- 空状态显示区 -->
     <el-empty description="暂无反馈" v-if="!isFind" :image-size="200" style="margin-top: 5rem;user-select:none;"></el-empty>
     <!-- 列表显示区域 -->
@@ -84,12 +84,6 @@
 </script>
 
 <style scoped>
-  .gray-title {
-    font-size: 2.2rem;
-    color: gray;
-    letter-spacing: 1rem;
-    text-shadow: 5px 5px 5px gray;
-  }
 
   .book-table {
     margin-top: 2rem;

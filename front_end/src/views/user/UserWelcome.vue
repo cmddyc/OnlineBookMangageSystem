@@ -1,39 +1,56 @@
 <template>
   <div class="welcome-main">
     <h3 class="greet">亲爱的用户
-      <span style="color:gray;font-style: italic;">{{user_name}}</span> , 欢迎使用</h3>
+      <span style="color:gray;font-style: italic;">{{user_id}}</span> , 欢迎使用</h3>
     <div class="title">在线图书系统</div>
-    <el-descriptions class="margin-top" title="个人信息" :column="4" :size="size" border>
+    <el-descriptions class="margin-top" title="个人信息" :column="1" :size="size" border>
       <template slot="extra">
-        <el-button type="primary" size="small">操作</el-button>
+        <div v-if="!isEdit">
+          <el-button type="warning" size="small" @click="editInfo()">编辑</el-button>
+        </div>
+        <div v-else>
+          <el-button type="success" size="small" @click="editInfo()">完成</el-button>
+        </div>
       </template>
-      <el-descriptions-item width="40%">
+      <el-descriptions-item label="test" :labelStyle='labelStyle'>
         <template slot="label">
           <i class="el-icon-user"></i>
           用户名
         </template>
-        {{user_name}}
+        <div v-if="!isEdit">{{ userInfo.username }}</div>
+        <div v-else>
+          <el-input v-model="userInfo.username"></el-input>
+        </div>
       </el-descriptions-item>
       <el-descriptions-item>
         <template slot="label">
           <i class="el-icon-mobile-phone"></i>
           电话
         </template>
-        18100000000
+        <div v-if="!isEdit">{{ userInfo.telephone }}</div>
+        <div v-else>
+          <el-input v-model="userInfo.telephone"></el-input>
+        </div>
       </el-descriptions-item>
       <el-descriptions-item>
         <template slot="label">
           <i class="el-icon-male"></i>
           性别
         </template>
-        男
+        <div v-if="!isEdit">{{ userInfo.sex }}</div>
+        <div v-else>
+          <el-input v-model="userInfo.sex"></el-input>
+        </div>
       </el-descriptions-item>
       <el-descriptions-item>
         <template slot="label">
           <i class="el-icon-medal-1"></i>
           年龄
-        </template>
-        20
+        </template>        
+        <div v-if="!isEdit">{{ userInfo.age }}</div>
+        <div v-else>
+          <el-input v-model="userInfo.age"></el-input>
+        </div>
         <!-- <el-tag size="small">学校</el-tag> -->
       </el-descriptions-item>
       <el-descriptions-item>
@@ -41,23 +58,46 @@
           <i class="el-icon-office-building"></i>
           邮箱
         </template>
-        江苏省苏州市吴中区吴中大道 1188 号
+        <div v-if="!isEdit">{{ userInfo.email }}</div>
+        <div v-else>
+          <el-input v-model="userInfo.email"></el-input>
+        </div>
       </el-descriptions-item>
       <el-descriptions-item>
         <template slot="label">
           <i class="el-icon-paperclip"></i>
           信誉值
         </template>
-        10
+        {{userInfo.credit}}
       </el-descriptions-item>
       <el-descriptions-item>
         <template slot="label">
           <i class="el-icon-reading"></i>
           当前借阅图书册数
         </template>
-        2
+        -
       </el-descriptions-item>
     </el-descriptions>
+
+    <!-- <el-dialog title="编辑个人信息" :visible.sync="editDialogVisible" width="50%">
+      <span>
+        <el-form :model="adminInfo" ref="adminInfo" :rules="editFormRules" label-width="70px">
+          <el-form-item label="用户名">
+            <el-input v-model="adminInfo.admin_id" :disabled="true"></el-input>
+          </el-form-item>
+          <el-form-item label="邮箱">
+            <el-input v-model="adminInfo.admin_email"></el-input>
+          </el-form-item>
+          <el-form-item label="手机">
+            <el-input v-model="editInfo.admin_phone"></el-input>
+          </el-form-item>
+        </el-form>
+      </span>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="editDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="closeEditDialog()">确 定</el-button>
+      </span>
+    </el-dialog> -->
   </div>
 </template>
 
@@ -65,24 +105,95 @@
   export default {
     data() {
       return {
-        user_name: ''
+        labelStyle: {'width': '200px'},
+        user_id: '',
+        userInfo: {
+          username: "Ahhhh"
+        },
+        isEdit: false,
       }
     },
     methods: {
-
+      getUserInfo() {
+        let submit = {
+          "id": window.localStorage.getItem('id'),
+          "token": window.localStorage.getItem('token')
+        }        
+        this.$http.post(this.baseUrl + '/userInfoSearch', submit).then(res => {
+          if (res.data.state === 'fail') {
+            this.$message.error({
+            message: '用户信息获取失败',
+            duration: 1500
+          })
+          } else {
+            this.userInfo.username = res.data.result.TUser[0].user_name
+            this.userInfo.sex = res.data.result[0].sex // test2
+            this.userInfo.age = res.data.result[0].TUser.age // test
+            this.userInfo.telephone = res.data.result.TUser[0].telephone
+            this.userInfo.email = res.data.result.TUser[0].Email
+            this.userInfo.credit = res.data.result.TUser[0].credit
+          }
+        }).catch(err => {
+          if (err) {
+            this.$message.error({
+              message: '[CATCH]用户信息获取失败',
+              duration: 1500
+            })
+          }
+        })        
+      },
+      editInfo() {
+        this.isEdit = !this.isEdit
+        if (!this.isEdit) //完成修改
+        {
+          let submit = {
+            "id": window.localStorage.getItem('id'),
+            "token": window.localStorage.getItem('token'),
+            "new_id": "no",
+            "name": this.userInfo.username,
+            "password": "no",
+            "age": this.userInfo.age,
+            "sex": this.userInfo.sex,
+            "telephone": this.userInfo.telephone,
+            "email": this.userInfo.email,
+          }
+          this.$http.post(this.baseUrl + '/user/userInfoChange', submit).then(res => {
+            if (res.data.state == 'fail') {
+              this.$message.error({
+                message: "个人信息修改失败"
+              })
+            } else {
+              this.$message.success({
+                message: "个人信息修改成功"
+              })
+            }
+          })
+        }
+      }
     },
     created() {
-      this.user_name = window.localStorage.getItem('name')
+      this.user_id = window.localStorage.getItem('id')
+      this.getUserInfo()
     }
   }
 </script>
 
 <style scoped>
   .welcome-main {
+      padding: 0;
+      margin: 0;
+      background-color: #f2f5f8;
+      text-align: center;
+    } 
+
+  .title {
+    position: relative;
+    user-select: none;
+    font-size: 2rem;
+    text-shadow: 5px 5px 5px gray;
+    transform: translate(-5.8rem, 0);
     padding: 0;
-    margin: 0;
-    background-color: #f2f5f8;
-    text-align: center;
+    margin: 0.5rem 0 4rem 0;
   }
 
   .el-carousel__item h3 {
@@ -96,16 +207,6 @@
   .swiper-img {
     height: 100%;
     width: 60%;
-  }
-
-  .title {
-    position: relative;
-    user-select: none;
-    font-size: 2rem;
-    text-shadow: 5px 5px 5px gray;
-    transform: translate(-5.8rem, 0);
-    padding: 0;
-    margin: 0.5rem 0 4rem 0;
   }
 
   .greet {

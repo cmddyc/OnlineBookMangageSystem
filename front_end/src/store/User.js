@@ -7,6 +7,7 @@ export default {
             state.id = window.localStorage.getItem('id')
             state.name = window.localStorage.getItem('name')
             state.token = window.localStorage.getItem('token')
+            state.usertype = window.localStorage.getItem('usertype')
         }
     },
     state:{

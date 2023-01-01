@@ -2,7 +2,7 @@
   <el-container class="main-container">
     <el-header>
       <el-menu mode="horizontal" background-color="#373d41" text-color="#fff" active-text-color="#9cdbfd" unique-opened
-        router :default-active="this.activePath" ref="menu" class="el-menu">
+        router :default-active="this.activePath" ref="menu" class="el-menu" @select="handleSelect">
         <div class="home">
           <i class="el-icon-s-home" style="font-size:2rem;padding-top:1rem" @click="backHome"></i>
         </div>
@@ -11,7 +11,7 @@
             <span style="font-size:100%">{{item.authName}}</span>
           </template>
         </el-menu-item>
-        <el-menu-item index="1" @click="OpenHomePage">
+        <el-menu-item index="9" @click="OpenHomePage">
           我的主页
         </el-menu-item>
               <el-button @click="logOut" class="log-out" type="danger" size="small">退出登录</el-button>
@@ -59,15 +59,19 @@
         this.menuList = res.data.data
         this.activePath = this.$route.fullPath
       },
+      handleSelect(key, keyPath) {
+        console.log(key,keyPath)
+      },
       // 保存链接激活状态
       saveNavState(activePath) {
         window.sessionStorage.setItem('activePath', activePath)
         this.activePath = activePath
       },
       OpenHomePage() {
-        window.sessionStorage.setItem('activePath', '/UserWelcome')
-        this.activePath = '/UserWelcome'
-        this.$router.push('./UserWelcome')
+        //this.activePath = '/userWelcome'       
+        window.sessionStorage.setItem('activePath', '/userWelcome')
+        this.activePath = '9'
+        this.$router.replace('./userWelcome')
       },
       // 回到主页
       backHome() {

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div style="text-align:center;user-select:none;"><span class="gray-title">用户管理</span></div>
+    <div style="text-align:center;user-select:none;"><span class="mytitle">用户管理</span></div>
     <!-- 管理员查询区 -->
     <el-row :gutter="20" style="margin:2rem 4rem 0 4rem">
       <el-col :span="20">
@@ -70,12 +70,6 @@
 </script>
 
 <style scoped>
-  .gray-title {
-    font-size: 2.2rem;
-    color: gray;
-    letter-spacing: 1rem;
-    text-shadow: 5px 5px 5px gray;
-  }
 
   .user-table {
     margin-top: 2rem;

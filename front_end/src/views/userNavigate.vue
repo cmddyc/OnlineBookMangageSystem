@@ -1,17 +1,40 @@
 <template>
   <el-container class="main-container">
     <el-header>
-      <el-menu mode="horizontal" background-color="#373d41" text-color="#fff" active-text-color="#9cdbfd" unique-opened
-        router :default-active="this.activePath" ref="menu" class="el-menu">
-        <div class="home">
-          <i class="el-icon-s-home" style="font-size:2rem;padding-top:1rem" @click="backHome"></i>
-        </div>
-        <el-menu-item :index="item.path" v-for="item in menuList" :key="item.id" @click="saveNavState(item.path)">
-          <template slot="title">
-            <span style="font-size:100%">{{item.authName}}</span>
-          </template>
+      <el-menu default-active="1"
+        mode="horizontal"
+        class="el-menu-demo"
+        background-color="#373d41"
+        text-color="#fff"
+        active-text-color="#9cdbfd"
+        style="height: 100%">
+        <el-menu-item index="1" @click="OpenHomePage">
+          主页
         </el-menu-item>
-              <el-button @click="logOut" class="log-out" type="danger" size="small">退出登录</el-button>
+        <el-menu-item index="2" @click="OpenBorrowBookPage">
+          图书馆藏
+        </el-menu-item>
+        <el-menu-item index="3" @click="OpenReturnBookPage">
+          我的图书
+        </el-menu-item>
+        <el-menu-item index="4" @click="OpenUserFeedbackPage">
+          反馈
+        </el-menu-item>
+
+        <el-dropdown class="log-out">
+          <span class="el-dropdown-link">
+            <i class="el-icon-user"></i>
+            <i class="el-icon-arrow-down el-icon--right"></i>
+          </span>
+          <el-dropdown-menu slot="dropdown">
+            <el-dropdown-item>
+              <el-link type="warning" @click="editAccount">账号修改</el-link>
+            </el-dropdown-item>
+            <el-dropdown-item>
+              <el-link type="danger" @click="logOut">退出登录</el-link>
+            </el-dropdown-item>
+          </el-dropdown-menu>
+        </el-dropdown>
       </el-menu>
     </el-header>
 
@@ -48,26 +71,18 @@
       ...mapMutations('userAbout', {
         saveInfo: 'SAVE'
       }),
-      // 获取菜单数据
-      async getMenuList() {
-        const res = await this.$http.get(this.baseUrl+'/getFormData')
-        if (res.status !== 200)
-          return this.$message.error('菜单初始化失败')
-        this.menuList = res.data.data
-        this.activePath = this.$route.fullPath
+      // 用户主页
+      OpenHomePage() {
+        this.$router.replace('./welcome')
       },
-      // 保存链接激活状态
-      saveNavState(activePath) {
-        window.sessionStorage.setItem('activePath', activePath)
-        this.activePath = activePath
+      OpenBorrowBookPage() {
+        this.$router.replace('./library')
+      },      
+      OpenReturnBookPage() {
+        this.$router.replace('./myBook')
       },
-      // 回到主页
-      backHome() {
-        if (this.$route.fullPath === '/welcome')
-          return
-        this.$router.push('/welcome')
-        window.sessionStorage.setItem('activePath', '/welcome')
-        this.activePath = '/welcome'
+      OpenUserFeedbackPage() {
+        this.$router.replace('./myFeedback')
       },
       // 用户登出
       async logOut() {
@@ -80,7 +95,6 @@
     created() {
       window.sessionStorage.removeItem('_one_key')
       this.saveInfo()
-      this.getMenuList()
     }
   }
 </script>
@@ -112,6 +126,15 @@
   .el-main {
     background-color: #f2f5f8;
     color: #333;
+  }
+
+  .el-dropdown-link {
+    cursor: pointer;
+    font-size: large;
+    color: #ffffff;
+  }
+  .el-icon-arrow-down {
+    font-size: 12px;
   }
 
   .el-icon-s-home {
@@ -170,8 +193,6 @@
 
   .log-out {
     cursor: pointer;
-    height: 2rem;
-    margin-top: 1rem;
     margin-left:10rem;
   }
 

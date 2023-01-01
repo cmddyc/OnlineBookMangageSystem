@@ -1,16 +1,17 @@
 <template>
   <div>
-    <!-- <div style="text-align:center;"><span class="gray-title">在线图书系统</span></div>
-    <el-empty description="快去借本书吧~" v-if="!isFind" :image-size="200" style="margin-top: 6.5rem;user-select:none;"></el-empty>
-    等待审核列表 -->
-    <el-button type="primary">添加反馈</el-button>
-    <el-table class="book-table" :data="waitBookList" v-if="isFind" v-loading="loading" style="width: 100%;">
+    <div style="text-align:center;"><span class="mytitle">在线图书系统</span></div>
+    <el-button class="space" type="primary">添加反馈</el-button>
+    <el-empty description="暂无反馈" v-if="!isFind" :image-size="200" style="margin-top: 6.5rem;user-select:none;"></el-empty>    
+    <el-table class="book-table" :data="feedbackList" v-if="isFind" v-loading="loading" style="width: 100%;">
       <el-table-column type="index" align="center" label="#"></el-table-column>
-      <el-table-column label="反馈时间" width="120" align="center" prop="book_name"></el-table-column>
-      <el-table-column label="反馈内容" align="center" prop="book_id"></el-table-column>
-      <el-table-column label="状态" width="80" align="center"><el-tag type="info">审核中</el-tag></el-table-column>
+      <el-table-column label="反馈时间" width="120" align="center" prop="feedback_time_id"></el-table-column>
+      <el-table-column label="反馈内容" align="center" prop="feedback_content"></el-table-column>
+      <el-table-column label="状态" width="80" align="center" prop="feedback_state"><el-tag type="info">审核中</el-tag></el-table-column>
       <el-table-column label="操作" width="80" align="center">
-        <el-link type="danger" >删除</el-link>
+        <template slot-scope="scope">
+          <el-link type="danger" @click="delFeedback(scope.row)">删除</el-link>
+        </template>
       </el-table-column>
     </el-table>
 </div>
@@ -26,7 +27,7 @@
   export default {
     data() {
       return {
-        waitBookList: [],
+        feedbackList: [],
         loading:true,
         isFind:false
       }
@@ -35,38 +36,52 @@
       ...mapState('userAbout', ['id'])
     },
     methods: {
-      async getWaitBooks() {
-        const res = await this.$http.get(this.baseUrl+`/getOnCheckBooks?id=${this.id}`)
-        this.waitBookList = res.data.bookList
-        const res2 = await this.$http.get(this.baseUrl+`/getHasBooks?id=${this.id}`)
-        this.waitBookList.push(...res2.data.bookList)
-        for(let i=0;i<this.waitBookList.length;i++) {
-          if(this.waitBookList[i].due === '') {
-            this.waitBookList[i].due = '审核中'
+      async getFeedback() {
+        let submit = {
+          "id": window.localStorage.getItem('id'),
+          "token": window.localStorage.getItem('token'),
+          "user_id": window.localStorage.getItem('id'),
+          "state": "no",
+        }
+        await this.$http.post(this.baseUrl+'/searchFeedBack', submit).then(res => {
+          if (res.data.state === 'fail') {
+            this.$message.error({
+              message: '获取反馈失败',
+              duration: 1000
+            })
+          } else {
+            this.feedbackList = res.data.result.TFeedBack
+            if (this.feedbackList.length !== 0) {
+              this.isFind = true
+              this.loading = false
+            }
           }
-        }
-        if(this.waitBookList.length !== 0) {
-          this.loading = false,
-          this.isFind = true
-        }
+        })
+        .catch(err => {this.$message.error({message: '[CATCH]获取反馈失败'})})
+      },
+      async delFeedback(row) {
+        this.$confirm(`要删除这条反馈吗？`, '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'info'
+        }).then(async () => {
+          let submit = {
+            "id": window.localStorage.getItem('id'),
+            "token": window.localStorage.getItem('token'),
+          }
+          await this.$http.post(this.baseUrl+'/deleteFeedBack', submit).then(res => {
+
+          })
+        })
       }
     },
     created() {
-      this.getWaitBooks()
+      this.getFeedback()
     }
   }
 </script>
 
 <style scoped>
-  .gray-title {
-    position: relative;
-    user-select: none;
-    color: darkgray;
-    text-shadow: 5px 5px 5px gray;
-    font-size: 2rem;
-    padding: 1rem 0 1rem 0;
-    line-height: 4rem;
-  }
 
   .saying {
     position: absolute;

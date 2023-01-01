@@ -1,6 +1,6 @@
 <template>
     <div>
-        <div style="text-align:center;user-select:none;"><span class="gray-title">书本管理</span></div>
+        <div style="text-align:center;user-select:none;"><span class="mytitle">书本管理</span></div>
         <!-- 管理员查询区 -->
         <el-row :gutter="20" style="margin:2rem 0 0 8rem">
             <el-col :span="18">

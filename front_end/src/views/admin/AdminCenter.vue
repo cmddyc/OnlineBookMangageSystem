@@ -107,11 +107,5 @@ export default {
 </script>
 
 <style scoped>
-.gray-title {
-  font-size: 2.2rem;
-  color: gray;
-  letter-spacing: 1rem;
-  text-shadow: 5px 5px 5px gray;
-}
 
 </style>
