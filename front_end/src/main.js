@@ -22,7 +22,8 @@ Vue.use(Vuex)
 // 修改原型
 Vue.prototype.$http = axios //axios
 
-Vue.prototype.baseUrl = 'http://127.0.0.1:8833/api'
+// Vue.prototype.baseUrl = 'http://127.0.0.1:8833/api'
+Vue.prototype.baseUrl = 'http://172.16.3.211:8848'
 
 Vue.config.productionTip = false
 

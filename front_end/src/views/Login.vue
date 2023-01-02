@@ -28,8 +28,8 @@
     <div class="register_box" v-if="!isOnLogin">
       <span>新用户注册</span>
       <el-form @submit.prevent='' ref='registerForRef' :model="registerData" :rules="registerFormRules" label-width>
-        <el-form-item prop="stu_id">
-          <el-input placeholder="id" v-model.trim="registerData.stu_id" prefix-icon="el-icon-user-solid">
+        <el-form-item prop="id">
+          <el-input placeholder="账号ID" v-model.trim="registerData.id" prefix-icon="el-icon-user-solid">
           </el-input>
         </el-form-item>
         <el-form-item prop="name">
@@ -51,13 +51,7 @@
           </el-input>
         </el-form-item>
         <el-form-item class="btns">
-          <el-button v-if="registerData.mail_num" :disabled="isFreqValidate" :round="false" :circle="false"
-            type="primary" size="medium" @click="getValidate" style="float:left;">
-            获取验证码<i class="el-icon-magic-stick el-icon--right"></i></el-button>
-          <el-button :disabled="!registerData.vali" v-if="isGetValidate&&registerData.mail_num" :round="false"
-            :circle="false" type="primary" size="medium" @click="register" style="float:right">
-            确认注册 <i class="el-icon-key el-icon--right"></i></el-button>
-            <el-button type="primary" plain @click="">注册</el-button>
+          <el-button type="primary" plain @click="register()">注册</el-button>
         </el-form-item>
         <el-link class="link" style="" target="_blank" @click="switchStatus">已有账户？ 点击登录</el-link>
       </el-form>
@@ -66,6 +60,7 @@
 </template>
 
 <script>
+  import qs from 'qs'
   import 'animate.css'
   import {
     mapState,
@@ -83,7 +78,7 @@
         },
         // 注册表单验证对象
         registerData: {
-          stu_id: '',
+          id: '',
           name: '',
           mail_num: '',
           vali: '',
@@ -123,7 +118,7 @@
         },
         // 注册表单验证规则对象
         registerFormRules: {
-          stu_id: [{
+          id: [{
               required: true,
               message: '请输入您的学号',
               trigger: 'blur'
@@ -191,33 +186,32 @@
       // 用户登录
       login() {
         let submit = {
-          "user": {
-            "mail_num": this.loginData.id,
-            "password": this.loginData.password
-          }
+          "userId": this.loginData.id,
+          "password": this.loginData.password
         }
         this.$refs.loginForRef.validate(async valid => {
           if (!valid) return
-          await this.$http.post(this.baseUrl+'/userlogin', submit).then(res => {
-            window.localStorage.setItem('token', submit.user.password)
-            window.localStorage.setItem('id', submit.user.id)
-            window.localStorage.setItem('name', res.data.name)
-            //window.localStorage.setItem('usertype', res.data.result)
+          await this.$http.post(this.baseUrl+'/login', submit).then(res => {
+            window.localStorage.setItem('token', submit.password)
+            window.localStorage.setItem('id', submit.userId)
+            window.localStorage.setItem('usertype', res.data.result)
+            console.log(res.data.state)
+            console.log(window.localStorage.getItem('id'))
             this.saveInfo()
             this.$message.success({
               message: '登录成功',
               duration: 1000
             })
-            // if (res.data.result == 0) // 普通用户
-            //   this.$router.push('/userNavigate')
-            // else if (res.data.result == 1) // Admin
-            //   this.$router.push('/adminNavigate')
-            // else
+            if (res.data.result == "user") // 普通用户
               this.$router.push('/userNavigate')
+            else if (res.data.result == "admin") // Admin
+              this.$router.push('/adminNavigate')
+            // else
+              // this.$router.push('/userNavigate')
           }).catch(err => {
             if (err) {
               this.$message.error({
-                message: '登录失败',
+                message: '[CATCH]登录失败',
                 duration: 1500
               })
             }
@@ -232,38 +226,45 @@
       async register() {
         let key = window.localStorage.getItem('_one_key')
         let submit = {
-          "user": {
+          //"user": {
+            "id": this.registerData.id,
             "name": this.registerData.name,
             "password": this.registerData.password,
-            "mail_num": this.registerData.mail_num,
-            "vali": this.registerData.vali,
-            key,
-            "stu_id": this.registerData.stu_id
-          }
+            "age": "",
+            "sex": "",
+            "telephone": "",
+            "email": this.registerData.mail_num,                      
+          //}
         }
-        this.$refs.registerForRef.validate(async valid => {
-          if (!valid) {
-            return
-          }
-          await this.$http.post(this.baseUrl+'/userregister', submit).then(res => {
-            window.localStorage.setItem('token', res.data.token)
-            window.localStorage.setItem('id', res.data.id)
-            window.localStorage.setItem('name', this.registerData.name)
-            this.saveInfo()
-            this.$message.success({
-              message: '注册成功',
-              duration: 2000
-            })
-            this.$router.push('/home') // userNavigate
-          }).catch((err, a) => {
-            if (err) {
+        // this.$refs.registerForRef.validate(async valid => {
+        //   if (!valid) {
+        //     return
+        //   }
+          await this.$http.post(this.baseUrl+'/register', qs.stringify(submit), 
+          {headers: {'Content-Type':'application/x-www-form-urlencoded'}}).then(res => {
+            if (res.data.state === 'fail') {
+              this.$message.error({message: '登录失败'})
+            } else {
+              window.localStorage.setItem('token', this.registerData.password)
+              window.localStorage.setItem('id', this.registerData.id)
+              window.localStorage.setItem('name', this.registerData.name)
+              console.log(res)
+              this.saveInfo()
+              this.$message.success({
+                message: '注册成功',
+                duration: 2000
+              })
+              this.$router.push('/userNavigate') // userNavigate
+            }
+          }).catch(err0 => {
+            if (err0) {
               this.$message.error({
-                message: '注册失败',
+                message: err0,
                 duration: 1500
               })
             }
           })
-        })
+        //})
       },
       // 获取验证码
       async getValidate() {

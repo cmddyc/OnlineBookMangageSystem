@@ -24,10 +24,11 @@
           <el-image style="width: 120px; height: 138px" :src="require('../../assets/book/02.jpg')" :fit="fit" />
         </template>
       </el-table-column>
-      <el-table-column label="书名" prop="book_name" align="center"></el-table-column>
-      <el-table-column label="作者" prop="book_author" align="center"></el-table-column>
-      <el-table-column label="ISBN" prop="isbn" align="center"></el-table-column>
-      <el-table-column label="类别" prop="TBookInfo.book_types" align="center"></el-table-column> //test
+      <el-table-column label="书名" prop="tBookInfo.bookName" align="center"></el-table-column>
+      <el-table-column label="作者" prop="tBookInfo.bookAuthor" align="center"></el-table-column>
+      <el-table-column label="ISBN" prop="tBookInfo.isbn" align="center"></el-table-column>
+      <el-table-column label="类别" prop="tBookInfo.bookTypes" align="center"></el-table-column>
+      <el-table-column label="借阅状态" prop="tBookInfo.borrowType" align="center"></el-table-column>
       <!-- <el-table-column label="借阅状态" align="center">
       <el-tag type="success">可借阅</el-tag></el-table-column> -->
       
@@ -35,7 +36,14 @@
         <template slot-scope="scope">
           <div class="user-ctrl">
             <el-link type="primary" @click="showBookInfo(scope.row)">查看详情</el-link>
-            <el-link type="primary" @click="showBorrow(scope.row)">借阅</el-link>
+            <div v-if="scope.row.tBookInfo.borrowType === '已借出'">
+              <el-link type="primary" @click="book(scope.row)">预定</el-link>
+            </div>
+            <div v-else>
+              <el-link type="primary" @click="borrow(scope.row)">借阅</el-link>
+            </div>
+
+            <!-- <el-link type="primary" @click="showBorrow(scope.row)">借阅</el-link> -->
             <!-- <el-link type="primary" @click="borrowBook(scope.row)">预订</el-link> -->
           </div>
         </template>
@@ -45,7 +53,16 @@
     <el-dialog :title=formTitle :visible.sync="formVisible" width="60%">
       <el-descriptions title="图书详情" :column="1">
         <el-descriptions-item label="定价">{{bookInfo.price}}</el-descriptions-item>
-        <el-descriptions-item label="电子书">{{bookInfo.ebook}}</el-descriptions-item>
+        <el-descriptions-item label="电子书">
+          <template slot-scope="scope">
+            <div v-if="scope.row.bookInfo.eBook === 'no'">
+              <el-tag type="info">无</el-tag>
+            </div>
+            <div v-else>
+              <el-tag type="success">有</el-tag>
+            </div>
+          </template>
+        </el-descriptions-item>
         <el-descriptions-item label="描述">{{bookInfo.intro}}</el-descriptions-item>        
       </el-descriptions>
     </el-dialog>
@@ -54,11 +71,11 @@
     <el-dialog :title=formTitle :visible.sync="form2Visible" width="60%">
       <el-table :data="borrowList" height="400" border style="width: 100%">
         <el-table-column type="index" label="#"></el-table-column>
-        <el-table-column prop="book_id" label="书目编号" width="120">
+        <el-table-column prop="bookId" label="书目编号" width="120">
         </el-table-column>
-        <el-table-column prop="borrow_type" label="借阅状态" width="120">
+        <el-table-column prop="borrowType" label="借阅状态" width="120">
         </el-table-column>
-        <el-table-column prop="broken_type" label="损坏情况" width="120">
+        <el-table-column prop="brokenType" label="损坏情况" width="120">
         </el-table-column>
         <el-table-column label="操作">
           <template slot-scope="scope">
@@ -77,6 +94,7 @@
 </template>
 
 <script>
+  import qs from 'qs'
   import {
     mapState,
     mapMutations,
@@ -90,10 +108,10 @@
         bookName: '',
         bookInfo: {},
         bookList: [{
-          book_name: ''
+          bookName: ''
         }],
         borrowList: [{
-          book_price: '6'
+          bookPrice: '6'
         }],
         isFind: false,
         loading: true,
@@ -112,13 +130,14 @@
           "token": window.localStorage.getItem('token'),
           "name": this.bookName,
           "isbn": "no",
-          "book_id": "no",
+          "bookId": "no",
           "author": "no",
           "type": "no",
-          "broken_type": "no",
-          "borrow_type": "no"
+          "brokenType": "no",
+          "borrowType": "no"
         }
-        this.$http.post(this.baseUrl + '/bookSearch', submit).then(res => {
+        await this.$http.post(this.baseUrl+'/bookSearch', qs.stringify(submit), 
+          {headers: {'Content-Type':'application/x-www-form-urlencoded'}}).then(res => {
           if (res.data.state === "fail") {
             this.$message.error({
               message: '图书信息获取失败',
@@ -130,15 +149,33 @@
             }
             this.isFind = true
             this.bookList = res.data.result
+
+            var count = 0
+            for (var j = 0; j < this.bookList.length; j++) {
+              for (var i = 0; i < this.bookList[j].tBook.length; i++) {
+                if (this.bookList[j].tBook[i].borrowType === 'finish') {
+                  count++
+                }
+              }
+              if (count) {
+                this.bookList[j].tBookInfo.borrowType = '可借阅'
+              }
+              else {
+                this.bookList[j].tBookInfo.borrowType = '已借出'
+              }
+            }
+
+            console.log(this.bookList[0].tBookInfo.bookImg)
+            console.log(this.bookList[0].tBook[0].bookId)
             this.loading = false
           }
-        })
+        }).catch(err => {this.$message.error({message: '[CATCH]获取所有信息失败 ' + err})})        
       },
       showBookInfo(row) {
-        this.formTitle = "《" + row.book_name + "》"
-        this.bookInfo.price = row.tBookInfo.book_price //test
-        this.bookInfo.ebook = row.e_book
-        this.bookInfo.intro = row.book_intro
+        this.formTitle = "《" + row.tBookInfo.bookName + "》"
+        this.bookInfo.price = row.tBookInfo.bookPrice //test
+        this.bookInfo.ebook = row.tBookInfo.ebook
+        this.bookInfo.intro = row.tBookInfo.bookIntro
 
         this.formVisible = true       
       },
@@ -150,7 +187,7 @@
       //   this.$alert(`${res.data.book_info}`, '书本详情（包含图片、定价、是否电子书）')
       // },
       showBorrow(row) {
-        this.formTitle = "《" + row.tBookInfo.book_name + "》的馆藏图书条目"
+        this.formTitle = "《" + row.tBookInfo.bookName + "》的馆藏图书条目"
         this.borrowList = row.tBook
         this.form2Visible = true
       },
@@ -159,52 +196,24 @@
           let submit = {
             "id": window.localStorage.getItem('id'),
             "token": window.localStorage.getItem('token'),
-            "book_id": row.book_id 
+            "isbn": row.tBookInfo.isbn,
+            "startTime": "",
+            "endTime": "90",
+            "note": "",
+            "type": "normal",
           }
-          const res = await this.$http.post(this.baseUrl+'/user/borrow', submit)
-          if (res.data.state === 'fail') {
-            this.$message.error({message: '借阅失败'})
-          } else {
-            this.$message.success({message: '借阅成功'})
-          }
-        }).catch(() => {
-          this.$message.info({message: '[CATCH]取消借阅'})
+          await this.$http.post(this.baseUrl + '/borrow', qs.stringify(submit),
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }).then(res => {
+              if (res.data.state === 'fail') {
+                this.$message.error({ message: '借阅失败' })
+              } else {
+                this.$message.success({ message: '借阅成功' })
+              }
+            })
+        }).catch((err) => {
+          this.$message.info({message: '[CATCH]取消借阅 ' + err})
         })
       },
-      async borrowBook(row) {
-        this.$confirm(`确定要借阅这本 ${row.author} 的 ${row.book_name} 吗？`, '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'info'
-        }).then(async () => {
-          let submit = {
-            book_id: row.book_id,
-            id:this.id
-          }
-          const res = await this.$http.post(this.baseUrl+`/submitBorrowReq`, submit)
-          if (res.status === 200) {
-            this.$message.success({
-              message: '请求提交成功',
-              duration: 1000
-            })
-            setTimeout(() => {
-            this.reload()
-          }, 500)
-            return 
-          } else {
-            return this.$message.error({
-              message: '请求失败,请稍后再试',
-              duration: 1000
-            })
-          }
-        }).catch(() => {
-          this.$message.info({
-            message: '已取消',
-            duration: 1000
-          })
-        })
-
-      }
     },
     created() {
       this.findBook()

@@ -25,7 +25,17 @@ body,
   }
 
 .space {
-    margin: 1rem 1rem 1rem 1rem;
+    margin: 5rem 5rem 5rem 5rem;
+    margin-top: 5px;
     display: flex;
     justify-content: space-around;
 }
+
+.qrcode {
+    display: inline-block;
+    width: 113px;
+    height: 113px;
+    background-color: #fff;
+    padding: 6px;
+    box-sizing: border-box;
+  }

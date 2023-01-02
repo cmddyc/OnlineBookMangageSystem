@@ -20,7 +20,7 @@
         <el-menu-item index="4" @click="OpenFeedbackManagePage">
           反馈管理
         </el-menu-item>
-        
+
         <el-dropdown class="log-out">
           <span class="el-dropdown-link">
             <i class="el-icon-user"></i>
@@ -128,6 +128,12 @@
     color: #333;
   }
 
+  .el-dropdown-link {
+    cursor: pointer;
+    font-size: large;
+    color: #ffffff;
+  }
+
   .el-icon-s-home {
     font-family: element-icons!important;
     color: black;
@@ -184,8 +190,6 @@
 
   .log-out {
     cursor: pointer;
-    height: 2rem;
-    margin-top: 1rem;
     margin-left:10rem;
   }
 

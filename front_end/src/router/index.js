@@ -11,6 +11,7 @@ import User from '../views/user/User'
 import BorrowBook from '../views/user/BorrowBook'
 import ReturnBook from '../views/user/ReturnBook'
 import userNavigate from '../views/userNavigate'
+import EbookViewer from '../views/user/EbookViewer'
 // 管理员页面导入
 import adminNavigate from '../views/adminNavigate'
 import AdminCenter from '../views/admin/AdminCenter'
@@ -47,6 +48,10 @@ const routes = [{
         {
             path: '/myFeedback',
             component: User
+        },
+        {
+            path: '/ebookView',
+            component: EbookViewer 
         }
     ],
         redirect: '/welcome'

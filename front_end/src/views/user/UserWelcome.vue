@@ -102,42 +102,52 @@
 </template>
 
 <script>
+  import qs from 'qs'
   export default {
     data() {
       return {
         labelStyle: {'width': '200px'},
         user_id: '',
         userInfo: {
-          username: "Ahhhh"
+          username: "",
+          telephone: "",
+          sex: "",
+          age: "",
+          email: ""
         },
         isEdit: false,
       }
     },
     methods: {
-      getUserInfo() {
+      async getUserInfo() {
         let submit = {
           "id": window.localStorage.getItem('id'),
-          "token": window.localStorage.getItem('token')
-        }        
-        this.$http.post(this.baseUrl + '/userInfoSearch', submit).then(res => {
+          "token": window.localStorage.getItem('token'),
+          "userId": window.localStorage.getItem('id')
+        }
+        await this.$http.post(this.baseUrl+'/userInfoSearch', qs.stringify(submit), 
+          {headers: {'Content-Type':'application/x-www-form-urlencoded'}}).then(res => {
+          console.log(res.data.state)
+          console.log(res.data.result)
           if (res.data.state === 'fail') {
             this.$message.error({
             message: '用户信息获取失败',
             duration: 1500
           })
           } else {
-            this.userInfo.username = res.data.result.TUser[0].user_name
+            this.userInfo.username = res.data.result[0].userName
             this.userInfo.sex = res.data.result[0].sex // test2
-            this.userInfo.age = res.data.result[0].TUser.age // test
-            this.userInfo.telephone = res.data.result.TUser[0].telephone
-            this.userInfo.email = res.data.result.TUser[0].Email
-            this.userInfo.credit = res.data.result.TUser[0].credit
+            this.userInfo.age = res.data.result[0].age // test
+            this.userInfo.telephone = res.data.result[0].telephone
+            this.userInfo.email = res.data.result[0].email
+            this.userInfo.credit = res.data.result[0].credit
+            console.log("username: "+this.userInfo.username)
           }
         }).catch(err => {
           if (err) {
             this.$message.error({
-              message: '[CATCH]用户信息获取失败',
-              duration: 1500
+              message: '[CATCH]用户信息获取失败' + err,
+              duration: 5000
             })
           }
         })        
@@ -149,22 +159,34 @@
           let submit = {
             "id": window.localStorage.getItem('id'),
             "token": window.localStorage.getItem('token'),
-            "new_id": "no",
+            "newId": "no",
             "name": this.userInfo.username,
             "password": "no",
             "age": this.userInfo.age,
             "sex": this.userInfo.sex,
             "telephone": this.userInfo.telephone,
             "email": this.userInfo.email,
+            "userId": "no",
+            "credit": "no"
           }
-          this.$http.post(this.baseUrl + '/user/userInfoChange', submit).then(res => {
-            if (res.data.state == 'fail') {
+          this.$http.post(this.baseUrl+'/userInfoChange', qs.stringify(submit), 
+          {headers: {'Content-Type':'application/x-www-form-urlencoded'}}).then(res => {
+            console.log(res.data.result)
+            if (res.data.state === 'fail') {
               this.$message.error({
                 message: "个人信息修改失败"
               })
             } else {
               this.$message.success({
                 message: "个人信息修改成功"
+              })
+              this.getUserInfo()
+            }
+          }).catch(err => {
+            if (err) {
+              this.$message.error({
+                message: '[CATCH]用户信息修改失败' + err,
+                duration: 5000
               })
             }
           })

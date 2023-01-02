@@ -1,7 +1,7 @@
 <template>
   <div>
     <h3 class="greet">亲爱的管理员
-      <span style="color:gray;font-style: italic;">{{adminInfo.admin_name}}</span> , 欢迎使用在线图书管理系统！</h3>
+      <span style="color:gray;font-style: italic;">{{adminInfo.adminId}}</span> , 欢迎使用在线图书管理系统！</h3>
     <el-descriptions class="margin-top" title="" :column="3" :size="size" border>
       <template slot="extra">
         <el-button type="primary" size="small" @click="showEditDialog()">编辑用户信息</el-button>
@@ -11,21 +11,21 @@
           <i class="el-icon-user"></i>
           用户名
         </template>
-        {{adminInfo.admin_id}}
+        {{adminInfo.adminName}}
       </el-descriptions-item>
       <el-descriptions-item span="10">
         <template slot="label">
           <i class="el-icon-mobile-phone"></i>
           电话
         </template>
-        {{adminInfo.admin_phone}}
+        {{adminInfo.adminPhone}}
       </el-descriptions-item>
       <el-descriptions-item span="10">
         <template slot="label">
           <i class="el-icon-office-building"></i>
           邮箱
         </template>
-        {{adminInfo.admin_email}}
+        {{adminInfo.adminEmail}}
       </el-descriptions-item>
       <el-descriptions-item>
         <template slot="label">
@@ -45,15 +45,15 @@
 
     <el-dialog title="编辑用户信息" :visible.sync="editDialogVisible" width="50%">
       <span>
-        <el-form :model="adminInfo" ref="adminInfo" :rules="editFormRules" label-width="70px">
+        <el-form :model="editInfo" ref="editInfo" :rules="editFormRules" label-width="70px">
           <el-form-item label="用户名">
-            <el-input v-model="adminInfo.admin_id" :disabled="true"></el-input>
+            <el-input v-model="editInfo.adminName"></el-input>
           </el-form-item>
           <el-form-item label="邮箱">
-            <el-input v-model="adminInfo.admin_email"></el-input>
+            <el-input v-model="editInfo.adminEmail"></el-input>
           </el-form-item>
           <el-form-item label="手机">
-            <el-input v-model="editInfo.admin_phone"></el-input>
+            <el-input v-model="editInfo.adminPhone"></el-input>
           </el-form-item>
         </el-form>
       </span>
@@ -66,17 +66,18 @@
 </template>
 
 <script>
+import qs from 'qs'
 export default {
   data(){
     return{
       adminInfo: {
-        admin_id: '100',
-        admin_phone: '18500001111',
-        admin_email: 'test@gmail.com',
-        admin_name: 'ADMINISTRATOR'
+        adminId: '100',
+        adminPhone: '18500001111',
+        adminEmail: 'test@gmail.com',
+        adminName: 'ADMINISTRATOR'
       },
       editInfo: {
-        admin_phone: ''
+        adminPhone: ''
       },
       numOfBooks: 300,
       numOfFeedback: 6,
@@ -84,14 +85,61 @@ export default {
     }
   },
   methods: {
+    async getAdminInfo() {
+        let submit = {
+          "id": window.localStorage.getItem('id'),
+          "token": window.localStorage.getItem('token')
+        }        
+        await this.$http.post(this.baseUrl+'/admin/adminInfoSearch', qs.stringify(submit), 
+          {headers: {'Content-Type':'application/x-www-form-urlencoded'}}).then(res => {
+          if (res.data.state === 'fail') {
+            this.$message.error({
+            message: '管理员信息获取失败',
+            duration: 1500
+          })
+          } else {
+            this.adminInfo.adminName = res.data.result[0].adminName
+            this.adminInfo.adminPhone = res.data.result[0].adminPhone
+            this.adminInfo.adminEmail = res.data.result[0].adminEmail
+          }
+        }).catch(err => {
+          if (err) {
+            this.$message.error({
+              message: '[CATCH]管理员信息获取失败' + err,
+              duration: 1500
+            })
+          }
+        })        
+      },
     showEditDialog() {
-      this.editInfo.admin_phone = this.adminInfo.admin_phone
+      this.editInfo = this.adminInfo
       this.editDialogVisible = true
     },
-    closeEditDialog() {
+    async closeEditDialog() {
       this.editDialogVisible = false
-      this.adminInfo.admin_phone = this.editInfo.admin_phone
-    }
+      let submit = {
+            "id": window.localStorage.getItem('id'),
+            "token": window.localStorage.getItem('token'),
+            "newId": "no",
+            "name": this.editInfo.adminName,
+            "password": "no",
+            "telephone": this.editInfo.adminPhone,
+            "email": this.editInfo.adminEmail,
+          }
+      await this.$http.post(this.baseUrl+'/admin/adminInfoChange', qs.stringify(submit), 
+          {headers: {'Content-Type':'application/x-www-form-urlencoded'}}).then(res => {    
+        if (res.data.state == 'fail') {
+          this.$message.error({
+            message: "管理员个人信息修改失败"
+          })
+        } else {
+          this.$message.success({
+            message: "管理员个人信息修改成功"
+          })
+          this.getAdminInfo()
+        }
+      }).catch(err => {this.$message.error({message: '[CATCH]管理员个人信息修改失败'})})
+    },
     // editFormRules: {
     //   email: [
     //       { required: true, message: '请输入用户邮箱', trigger: 'blur' },
@@ -102,6 +150,10 @@ export default {
     //       // { validator: checkMobile, trigger: 'blur' }
     //   ]
 // }
+  },
+  created() {
+    this.adminInfo.adminId = window.localStorage.getItem('id')
+    this.getAdminInfo()
   }
 }
 </script>

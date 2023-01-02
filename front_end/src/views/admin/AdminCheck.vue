@@ -4,11 +4,14 @@
     <!-- 空状态显示区 -->
     <el-empty description="暂无反馈" v-if="!isFind" :image-size="200" style="margin-top: 5rem;user-select:none;"></el-empty>
     <!-- 列表显示区域 -->
-    <el-table class="book-table" :data="borrowRequestList" v-if="isFind" v-loading="loading" style="width: 100%;">
+    <el-table class="book-table" :data="feedbackList" v-if="isFind" v-loading="loading" style="width: 100%;">
       <el-table-column type="index" align="center" label="#"></el-table-column>
-      <el-table-column label="用户ID" align="center" prop="book_name"></el-table-column>
-      <el-table-column label="反馈时间" align="center" prop="book_id"></el-table-column>
-      <el-table-column label="反馈内容" align="center" prop="author"></el-table-column>
+      <el-table-column label="用户ID" align="center" prop="userId"></el-table-column>
+      <el-table-column label="反馈时间" width="150" align="center" prop="feedbackTime"></el-table-column>
+      <el-table-column label="反馈内容" align="center" prop="feedbackContent"></el-table-column>
+      <el-table-column label="状态" width="120" align="center" prop="feedbackState">
+        <!-- <el-tag type="info">审核中</el-tag> -->
+      </el-table-column>
       <el-table-column label="操作" align="center">
           <template slot-scope="scope">
             <el-link type="success" @click="agreeWith(scope.row)">通过</el-link>
@@ -21,6 +24,7 @@
 </template>
 
 <script>
+  import qs from 'qs'
   import {
     mapState,
     mapMutations,
@@ -33,52 +37,94 @@
       return {
         isFind: false,
         loading: true,
-        borrowRequestList: [],
+        feedbackList: [],
+        timestamp: []
       }
     },
     computed: {
       ...mapState('userAbout', ['id'])
     },
     methods: {
-      async getBorrowRequestList() {
-        const res = await this.$http.get(this.baseUrl+`/adminGetBorrowList`)
-        let tmp = res.data.bookList
-        for (let i = 0; i < tmp.length; i++) {
-          tmp[i].state = tmp[i].state.substring(11)
+      async getFeedback() {
+        let submit = {
+          "id": window.localStorage.getItem('id'),
+          "token": window.localStorage.getItem('token'),
+          "userId": "",
+          "startTime": Date.parse("2022/12/1 10:00"),
+          "endTime": Date.parse(new Date()), 
+          "state": "no",
         }
-        if (res.status === 200) {
-          this.borrowRequestList = res.data.bookList
-          if(this.borrowRequestList.length === 0) {
-            return
+        await this.$http.post(this.baseUrl+'/searchFeedBack', qs.stringify(submit), 
+          {headers: {'Content-Type':'application/x-www-form-urlencoded'}}).then(res => {
+          if (res.data.state === 'fail') {
+            this.$message.error({
+              message: '获取反馈失败',
+              duration: 1000
+            })
+          } else {
+            this.feedbackList = res.data.result
+            for (var i = 0; i < this.feedbackList.length; i++) {
+              this.timestamp[i] = this.feedbackList[i].feedbackTimeId
+              var date = new Date(parseInt(this.feedbackList[i].feedbackTimeId))
+              this.feedbackList[i].feedbackTime = date.getFullYear() + '-' + (date.getMonth()+1) + '-' + date.getDate() + ' ' + date.getHours() + ':' + (date.getMinutes() < 10 ? '0'+(date.getMinutes()) : date.getMinutes())
+            }
+            if (this.feedbackList.length !== 0) {
+              this.isFind = true
+              this.loading = false
+            }
           }
-          this.isFind = true
-          this.loading = false
-        }
+        })
+        .catch(err => {this.$message.error({message: '[CATCH]获取反馈失败' + err})})
       },
       async agreeWith(row) {
+        console.log(row.feedbackTimeId.substring(0, 13))
         let submit = {
-          id: row.state,
-          book_id: row.book_id
+          "id": window.localStorage.getItem('id'),
+          "token": window.localStorage.getItem('token'),
+          "userId": row.userId,
+          "feedbackTimeId": row.feedbackTimeId.substring(0, 13),
+          "feedbackState": 'agree',
         }
-        const res = await this.$http.post(this.baseUrl+'/adminAgreeBorrow', submit)
-        if (res.status === 200) {
-          this.$message.info({
-            message: '操作成功',
-            duration: 500
-          })
-          setTimeout(() => {
-            this.reload()
-          }, 500)
-        } else {
-          this.$message.error({
-            message: '操作失败,请稍后再试',
-            duration: 1000
-          })
+        await this.$http.post(this.baseUrl+'/admin/handleFeedBack', qs.stringify(submit), 
+          {headers: {'Content-Type':'application/x-www-form-urlencoded'}}).then(res => {
+          if (res.data.state === 'fail') {
+            this.$message.error({
+              message: '处理反馈失败',
+              duration: 1000
+            })
+          } else {
+            this.$message.success({message: '处理反馈成功'})
+            this.getFeedback()
+          }
+        })
+        .catch(err => {this.$message.error({message: '[CATCH]处理反馈失败' + err})})
+      },
+      async disagreeWith(row) {
+        console.log(row.feedbackTimeId.substring(0, 13))
+        let submit = {
+          "id": window.localStorage.getItem('id'),
+          "token": window.localStorage.getItem('token'),
+          "userId": row.userId,
+          "feedbackTimeId": row.feedbackTimeId.substring(0, 13),
+          "feedbackState": 'disagree',
         }
+        await this.$http.post(this.baseUrl+'/admin/handleFeedBack', qs.stringify(submit), 
+          {headers: {'Content-Type':'application/x-www-form-urlencoded'}}).then(res => {
+          if (res.data.state === 'fail') {
+            this.$message.error({
+              message: '处理反馈失败',
+              duration: 1000
+            })
+          } else {
+            this.$message.success({message: '处理反馈成功'})
+            this.getFeedback()
+          }
+        })
+        .catch(err => {this.$message.error({message: '[CATCH]处理反馈失败' + err})})
       }
     },
     created() {
-      this.getBorrowRequestList()
+      this.getFeedback()
     }
   }
 </script>
