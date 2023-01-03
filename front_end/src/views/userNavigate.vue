@@ -38,16 +38,33 @@
       </el-menu>
     </el-header>
 
+    <el-dialog title="账号修改" :visible.sync="editVisible" @close="getUserList()" width="50%">
+      <span>
+        <el-form label-width="70px">
+          <el-form-item label="ID">
+            <el-input v-model="newId"></el-input>
+          </el-form-item>
+          <el-form-item label="密码">
+            <el-input show-password placeholder="新密码" type="password" v-model="newPwd"></el-input>
+          </el-form-item>
+        </el-form>
+      </span>
+      <span slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="handleEdit()">提 交</el-button>
+      </span>
+    </el-dialog>
+
     <el-main class="router-main">
       <transition-group appear name="animate__animated animated__bounce" enter-active-class="animate__fadeInDown"
           leave-active-class="animate__fadeOutDown">
-        <router-view key="2"></router-view>  
+        <router-view key="2"></router-view>        
       </transition-group>
     </el-main>
   </el-container>
 </template>
 
 <script>
+  import qs from 'qs'
   import 'animate.css'
   import {
     mapState,
@@ -61,7 +78,11 @@
         // 菜单数据
         menuList: [],
         // 被激活的链接地址
-        activePath: ''
+        activePath: '',
+
+        editVisible: false,
+        newId: '',
+        newPwd: ''
       }
     },
     computed: {
@@ -83,6 +104,47 @@
       },
       OpenUserFeedbackPage() {
         this.$router.replace('./myFeedback')
+      },
+      // 账号修改
+      editAccount() {
+        this.newId = window.localStorage.getItem('id'),
+        this.editVisible = true
+      },
+      handleEdit() {
+        let submit = {
+            "id": window.localStorage.getItem('id'),
+            "token": window.localStorage.getItem('token'),
+            "newId": this.newId,
+            "name": "no",
+            "password": this.newPwd,
+            "age": "no",
+            "sex": "no",
+            "telephone": "no",
+            "email": "no",
+            "userId": "no",
+            "credit": "no"
+        }
+        this.$http.post(this.baseUrl+'/userInfoChange', qs.stringify(submit), 
+          {headers: {'Content-Type':'application/x-www-form-urlencoded'}}).then(res => {
+            console.log(res.data.result)
+            if (res.data.state === 'fail') {
+              this.$message.error({
+                message: "修改失败"
+              })
+            } else {
+              this.$message.success({
+                message: "修改成功"
+              })
+              this.$router.replace('/login')
+            }
+          }).catch(err => {
+            if (err) {
+              this.$message.error({
+                message: '[CATCH]修改失败' + err,
+                duration: 5000
+              })
+            }
+          })
       },
       // 用户登出
       async logOut() {

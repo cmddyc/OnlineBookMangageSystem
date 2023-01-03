@@ -21,7 +21,7 @@
         <!-- style="height:100px;width=30%" :fit="fit" -->
         <template v-slot:default="scope">
           <!-- <img :src="scope.row.book_img" width="120" height="138" /> -->
-          <el-image style="width: 120px; height: 138px" :src="require('../../assets/book/02.jpg')" :fit="fit" />
+          <el-image style="width: 120px; height: 138px" :src="scope.row.tBookInfo.bookImg" :fit="fit" />
         </template>
       </el-table-column>
       <el-table-column label="书名" prop="tBookInfo.bookName" align="center"></el-table-column>
@@ -37,14 +37,14 @@
           <div class="user-ctrl">
             <el-link type="primary" @click="showBookInfo(scope.row)">查看详情</el-link>
             <div v-if="scope.row.tBookInfo.borrowType === '已借出'">
-              <el-link type="primary" @click="book(scope.row)">预定</el-link>
+              <el-link type="primary" disabled @click="borrow(scope.row)">借阅</el-link>
             </div>
             <div v-else>
-              <el-link type="primary" @click="borrow(scope.row)">借阅</el-link>
+              <el-link type="primary" @click="borrow(scope.row, 'normal')">借阅</el-link>
             </div>
-
-            <!-- <el-link type="primary" @click="showBorrow(scope.row)">借阅</el-link> -->
-            <!-- <el-link type="primary" @click="borrowBook(scope.row)">预订</el-link> -->
+            <div>
+              <el-link type="primary" @click="borrow(scope.row, 'ebook')">电子书</el-link>
+            </div>
           </div>
         </template>
       </el-table-column>
@@ -54,21 +54,19 @@
       <el-descriptions title="图书详情" :column="1">
         <el-descriptions-item label="定价">{{bookInfo.price}}</el-descriptions-item>
         <el-descriptions-item label="电子书">
-          <template slot-scope="scope">
-            <div v-if="scope.row.bookInfo.eBook === 'no'">
+            <div v-if="bookInfo.ebook === 'no'">
               <el-tag type="info">无</el-tag>
             </div>
             <div v-else>
               <el-tag type="success">有</el-tag>
             </div>
-          </template>
         </el-descriptions-item>
         <el-descriptions-item label="描述">{{bookInfo.intro}}</el-descriptions-item>        
       </el-descriptions>
     </el-dialog>
 
     <!-- 借阅对话框 -->
-    <el-dialog :title=formTitle :visible.sync="form2Visible" width="60%">
+    <!-- <el-dialog :title=formTitle :visible.sync="form2Visible" width="60%">
       <el-table :data="borrowList" height="400" border style="width: 100%">
         <el-table-column type="index" label="#"></el-table-column>
         <el-table-column prop="bookId" label="书目编号" width="120">
@@ -89,7 +87,7 @@
           </template>
         </el-table-column>
       </el-table>
-    </el-dialog>
+    </el-dialog> -->
   </div>
 </template>
 
@@ -191,7 +189,7 @@
         this.borrowList = row.tBook
         this.form2Visible = true
       },
-      async borrow(row) {
+      async borrow(row,types) {
         this.$confirm('确定借阅', '提示').then(async () => {
           let submit = {
             "id": window.localStorage.getItem('id'),
@@ -200,7 +198,7 @@
             "startTime": "",
             "endTime": "90",
             "note": "",
-            "type": "normal",
+            "type": types,
           }
           await this.$http.post(this.baseUrl + '/borrow', qs.stringify(submit),
             { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }).then(res => {

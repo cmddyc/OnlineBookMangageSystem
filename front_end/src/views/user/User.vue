@@ -105,6 +105,7 @@
             this.$message.success({message:'提交反馈成功'})
             this.formVisible = false
             this.getFeedback()
+            location.reload()
           }
         })
         .catch(err => {this.$message.error({message: '[CATCH]提交反馈失败' + err})})

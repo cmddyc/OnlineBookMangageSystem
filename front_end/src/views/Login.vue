@@ -198,6 +198,9 @@
             console.log(res.data.state)
             console.log(window.localStorage.getItem('id'))
             this.saveInfo()
+            if (res.data.state === "fail") {
+              this.$message.error({message:'用户名或密码有误！'})
+            } else
             this.$message.success({
               message: '登录成功',
               duration: 1000

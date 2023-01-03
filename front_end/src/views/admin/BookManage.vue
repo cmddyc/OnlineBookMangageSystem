@@ -122,6 +122,12 @@
                   </template>
                 </el-table-column>
                 <el-table-column prop="bookId" label="书目ID" width="120">
+                    <template slot-scope="scope">
+                        <div v-if="!scope.row.isEdit2">{{ scope.row.bookId }}</div>
+                        <div v-else>
+                            <el-input type="textarea" autosize v-model="newIsbn"></el-input>
+                        </div>
+                    </template>
                 </el-table-column>
                 <el-table-column prop="borrowType" label="借阅状态" width="120">
                   <template slot-scope="scope">
@@ -323,6 +329,7 @@ export default {
         async editBookInfo(row) {
             if (row.isEdit) { // 已在编辑
                 row.isEdit = false
+                row.tBookInfo.bookImg = 'no'
                 let submit = {
                     "id": window.localStorage.getItem('id'),
                     "token": window.localStorage.getItem('token'),
@@ -347,6 +354,7 @@ export default {
                                 message: "图书信息修改成功"
                             })
                             this.findBook()
+                            location.reload()
                         }
                     }).catch(err => { this.$message.error({ message: '[CATCH]图书个人信息修改失败' + err }) })
             } else { // 想要编辑
@@ -361,7 +369,7 @@ export default {
                     "id": window.localStorage.getItem('id'),
                     "token": window.localStorage.getItem('token'),
                     "isbn": row.isbn,
-                    "bookId": row.bookId,
+                    "bookId": this.newIsbn,
                     "newBookId": "no",
                     "brokenType": row.brokenType,
                     "borrowType": row.borrowType
@@ -383,6 +391,7 @@ export default {
                     }).catch(err => { this.$message.error({ message: '[CATCH]图书个人信息修改失败' + err }) })
             } else { // 想要编辑
                 this.$set(row, 'isEdit2', true)
+                this.newIsbn = row.bookId
             }            
         },
         addBookInfo() {
@@ -437,6 +446,9 @@ export default {
             console.log('222221' + this.newBookInfo.ebook)
             if (this.newBookInfo.ebook === undefined) {
                 this.newBookInfo.ebook = 'no'
+            }
+            if (this.newBookInfo.bookImg === undefined) {
+                this.newBookInfo.bookImg = 'no'
             }
             let submit = {
                 "id": window.localStorage.getItem('id'),

@@ -17,7 +17,7 @@
           <div class="user-ctrl">
             <el-link type="success" @click="comment(scope.row)">书评</el-link>
             <el-link type="primary" @click="ebookRead(scope.row)">电子书阅览</el-link>
-            <el-link type="danger" @click="returnMyBook(scope.row)">还书</el-link>
+            <el-link type="warning" @click="returnMyBook(scope.row)">借阅码</el-link>
           </div>
         </template>
       </el-table-column>
@@ -57,11 +57,11 @@
       <span>
         <el-table :data="historyList" height="400" border style="width: 100%">
           <el-table-column type="index" align="center" label="#"></el-table-column>
-          <el-table-column label="书名" align="center" prop="book_name"></el-table-column>
-          <el-table-column label="图书编号" align="center" prop="book_id"></el-table-column>
-          <el-table-column label="作者" align="center" prop="book_author"></el-table-column>
-          <el-table-column label="借书时间" align="center" prop="startTime"></el-table-column>
-          <el-table-column label="还书时间" align="center" prop="endTime"></el-table-column>
+          <!-- <el-table-column label="书名" align="center" prop="bookName"></el-table-column> -->
+          <el-table-column label="图书编号" align="center" prop="bookId"></el-table-column>
+          <!-- <el-table-column label="作者" align="center" prop="bookAuthor"></el-table-column> -->
+          <el-table-column label="借书时间" align="center" prop="borrowStartTime"></el-table-column>
+          <el-table-column label="还书时间" align="center" prop="borrowEndTime"></el-table-column>
           <el-table-column label="操作" align="center">
             <template slot-scope="scope">
               <div class="user-ctrl">
@@ -133,8 +133,7 @@
               duration: 1000
             })
           } else {
-            console.log('1 ' + res.data.result[1].bookId)
-            console.log('0 ' + res.data.result[0].bookId)
+            //console.log('0 ' + res.data.result[0].bookId)
             this.returnBookList = res.data.result
 
             this.handleInfo()           
@@ -144,8 +143,8 @@
       },
       async handleInfo() {
         for (var i = 0; i < this.returnBookList.length; i++) {
-          console.log('00 ' + this.returnBookList[0].bookId)
-          console.log('11 ' + this.returnBookList[1].bookId)
+          //console.log('00 ' + this.returnBookList[0].bookId)
+          //console.log('11 ' + this.returnBookList[1].bookId)
           let submit = {
             "id": window.localStorage.getItem('id'),
             "token": window.localStorage.getItem('token'),
@@ -188,7 +187,7 @@
         if (willEdit)
           this.formTitle = "书评：《" + row.bookName + "》"
         else
-          this.formTitle = "您的书评：《" + row.bookName + "》"
+          this.formTitle = "您的书评：《" + row.bookId + "》"
         let submit = {
           "id": window.localStorage.getItem('id'),
           "token": window.localStorage.getItem('token'),
@@ -209,7 +208,7 @@
             this.isbn = row.isbn
           }
         })
-        .catch(err => {this.$message.error({message: '[CATCH]获取书评失败' + err})})
+        .catch(err => {this.$message.error({message: '[CATCH]书评为空'})})
 
         this.formVisible = true
       },
@@ -235,13 +234,14 @@
         .catch(err => {this.$message.error({message: '[CATCH]书评失败' + err})}) 
       },
       async ebookRead(row) {
-        this.$router.push('/ebookView')
+      //  this.$router.push('/ebookView')
         let submit = {
           "id": window.localStorage.getItem('id'),
           "token": window.localStorage.getItem('token'),
           "bookId": row.borrow.bookId,
-          "startTime": row.borrow.startTime
+          "startTime": row.borrow.borrowStartTime
         }
+        console.log(qs.stringify(submit));
         await this.$http.post(this.baseUrl+'/eBookRead', qs.stringify(submit), 
           {headers: {'Content-Type':'application/x-www-form-urlencoded'}}).then(res => {
           if (res.data.state === 'fail') {
@@ -250,13 +250,16 @@
               duration: 1000
             })
           } else {
-            this.ebook = res.data.result.file
+            var ebook = res.data.result
+            var result1=ebook;
+            let Window=window.open("")
+            Window.document.write("<iframe width='100%' height='100%' src='"+result1+"#toolbar=0'></iframe>")
           }
         })
         .catch(err => {this.$message.error({message: '[CATCH]获取电子书失败' + err})}) 
       },
       returnMyBook(row) {
-        this.formTitle = "归还《" +row.bookName+ "》"
+        this.formTitle = "《" +row.bookName+ "》"
         console.log(row.borrow.bookId)
         let submit = {
           "id": window.localStorage.getItem('id'),

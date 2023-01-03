@@ -27,7 +27,7 @@
         </template>
         {{adminInfo.adminEmail}}
       </el-descriptions-item>
-      <el-descriptions-item>
+      <!-- <el-descriptions-item>
         <template slot="label">
           <i class="el-icon-reading"></i>
           当前图书馆藏数
@@ -40,7 +40,7 @@
           当前待处理的反馈数
         </template>
         {{numOfFeedback}}
-      </el-descriptions-item>
+      </el-descriptions-item> -->
     </el-descriptions>
 
     <el-dialog title="编辑用户信息" :visible.sync="editDialogVisible" width="50%">
@@ -62,11 +62,15 @@
         <el-button type="primary" @click="closeEditDialog()">确 定</el-button>
       </span>
     </el-dialog>
+    
+    <vue-qrcode></vue-qrcode>
+
   </div>
 </template>
 
 <script>
 import qs from 'qs'
+import qrcode from './scan.vue'
 export default {
   data(){
     return{
@@ -84,6 +88,11 @@ export default {
       editDialogVisible: false
     }
   },
+  components:{
+    'vue-qrcode': qrcode,
+  },
+   
+  
   methods: {
     async getAdminInfo() {
         let submit = {
@@ -157,7 +166,6 @@ export default {
   }
 }
 </script>
-
 <style scoped>
 
 </style>

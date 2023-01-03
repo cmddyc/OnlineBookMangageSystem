@@ -70,13 +70,13 @@
         </template>
         {{userInfo.credit}}
       </el-descriptions-item>
-      <el-descriptions-item>
+      <!-- <el-descriptions-item>
         <template slot="label">
           <i class="el-icon-reading"></i>
           当前借阅图书册数
         </template>
         -
-      </el-descriptions-item>
+      </el-descriptions-item> -->
     </el-descriptions>
 
     <!-- <el-dialog title="编辑个人信息" :visible.sync="editDialogVisible" width="50%">

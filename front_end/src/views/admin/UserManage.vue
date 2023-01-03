@@ -81,6 +81,20 @@
         <el-button type="primary" @click="closeEditDialog()">提 交</el-button>
       </span>
     </el-dialog>
+
+    <!-- 借阅码弹窗 -->
+    <el-dialog title="核对借阅码" :visible.sync="form3Visible" @close="getUserList()" width="50%">
+      <span>
+        <el-row>
+          {{borrowCode}}    
+        </el-row>
+      </span>
+      <span slot="footer" class="dialog-footer">
+        <el-button type="primary" plain @click="closeBorrow()">借 书</el-button>
+        <h7>&nbsp &nbsp</h7>
+        <el-button type="danger" plain @click="closeReturn()">还 书</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -91,6 +105,7 @@
       return {
         userName: '',
         borrowCode: '',
+        borrowInfo: {},
         userList: [],
         userInfo: {},
         returnBookList: [],
@@ -100,7 +115,8 @@
 
         formTitle: '',
         formVisible: false,
-        form2Visible: false
+        form2Visible: false,
+        form3Visible: false
       }
     },
     methods: {
@@ -180,14 +196,15 @@
               var date = new Date(parseInt(this.returnBookList[i].borrowEndTime))
               this.returnBookList[i].borrowEndTime = date.getFullYear() + '-' + (date.getMonth()+1) + '-' + date.getDate() + ' ' + date.getHours() + ':' + (date.getMinutes() < 10 ? '0'+(date.getMinutes()) : date.getMinutes())
 
-              this.dict["borrow"] = this.returnBookList[i]
-              this.dict["bookName"] = res2.data.result[0].tBookInfo.bookName
-              this.dict["isbn"] = res2.data.result[0].tBookInfo.isbn
-              this.dict["bookAuthor"] = res2.data.result[0].tBookInfo.bookAuthor
-              this.returnResult.push(this.dict)
+              var dict={}
+              dict["borrow"] = this.returnBookList[i]
+              dict["bookName"] = res2.data.result[0].tBookInfo.bookName
+              dict["isbn"] = res2.data.result[0].tBookInfo.isbn
+              dict["bookAuthor"] = res2.data.result[0].tBookInfo.bookAuthor
+              this.returnResult.push(dict)
               console.log('2222' + this.returnResult[0].bookName)
               //this.returnBookList2[i] = res2.data.result[0]
-            })
+            }).catch(err => {this.$message.error({message: '[CATCH]获取借阅信息失败 ' + err})})        
         }
         console.log('2233' + this.returnResult.length)
         this.returnBookList = this.returnResult
@@ -254,14 +271,14 @@
           this.$message.info({message: '[CATCH]取消删除 ' + err})
         })
       },
-      borrowConfirm(row) {
+      async borrowConfirm(row) {
         let submit = {
           "id": window.localStorage.getItem('id'),
           "token": window.localStorage.getItem('token'),
           "bookId": row.borrow.bookId,
           "userId": row.borrow.userId,
         }
-        this.$http.post(this.baseUrl+'/borrowCode', qs.stringify(submit), 
+        await this.$http.post(this.baseUrl+'/borrowCode', qs.stringify(submit), 
           {headers: {'Content-Type':'application/x-www-form-urlencoded'}}).then(res => {
           if (res.data.state === 'fail') {
             this.$message.error({
@@ -270,34 +287,70 @@
             })
           } else {
             this.borrowCode = res.data.result
-            this.$confirm('请扫描用户的借阅码核对：' + res.data.result, '提示').then(
-              this.returnConfirm(row)
-            )
+            this.borrowInfo = row.borrow
+            //this.$message.success({message: this.borrowCode})
+            this.form3Visible = true
+            //this.returnConfirm(row)
           }
         })
         .catch(err => {this.$message.error({message: '[CATCH]获取借阅码失败' + err})}) 
       },
-      returnConfirm(row) {
+      closeBorrow() {
         let submit = {
           "id": window.localStorage.getItem('id'),
           "token": window.localStorage.getItem('token'),
-          "userId": row.borrow.userId,
-          "bookId": row.borrow.bookId,
-          "type": row.borrow.type,
-          "note": "no"
+          "isbn":this.borrowInfo.bookId,
+          "startTime":"no",
+          "endTime":"no",
+          "note":"no",
+          "type":"normal"
         }
-        this.$http.post(this.baseUrl+'/admin/return', qs.stringify(submit), 
-          {headers: {'Content-Type':'application/x-www-form-urlencoded'}}).then(res => {
-          if (res.data.state === 'fail') {
-            this.$message.error({
-              message: '还书失败',
-              duration: 1000
-            })
-          } else {
-            this.$message.success({message:'还书成功！'})
+        this.$http.post(this.baseUrl+'/borrow', qs.stringify(submit), 
+           {headers: {'Content-Type':'application/x-www-form-urlencoded'}}).then(res => {
+           if (res.data.state === 'fail') {
+             this.$message.error({
+             message: '借阅失败',
+             duration: 1500
+           })
+           } else {
+                this.$message.success({
+                  message:'借阅成功'
+                })
+                this.form3Visible = false
+           }
+         }).catch(err => {
+           if (err) {
+             this.$message.error({
+               message: '[CATCH]借阅失败' + err,
+               duration: 1500
+             })
+           }
+         }) 
+      },
+      closeReturn() {
+        this.$confirm('请扫描用户的借阅码核对', '提示').then(async () => {
+          let submit = {
+            "id": window.localStorage.getItem('id'),
+            "token": window.localStorage.getItem('token'),
+            "userId": this.borrowInfo.userId,
+            "bookId": this.borrowInfo.bookId,
+            "type": "normal",
+            "note": "no"
           }
+          await this.$http.post(this.baseUrl + '/admin/return', qs.stringify(submit),
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }).then(res => {
+              if (res.data.state === 'fail') {
+                this.$message.error({
+                  message: '还书失败',
+                  duration: 1000
+                })
+              } else {
+                this.$message.success({ message: '还书成功！' })
+                this.form3Visible = false
+              }
+            })
+            .catch(err => { this.$message.error({ message: '[CATCH]还书失败' + err }) })        
         })
-        .catch(err => {this.$message.error({message: '[CATCH]还书失败' + err})})
       }
     },
     created() {
